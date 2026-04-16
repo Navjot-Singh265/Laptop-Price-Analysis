@@ -155,7 +155,7 @@ plt.show()
 # =========================
 # OBJECTIVE 4: bar graph
 # =========================
-
+#This is for visualisation
 company_counts = df['Company'].value_counts()
 plt.figure(figsize=(12,6))
 
