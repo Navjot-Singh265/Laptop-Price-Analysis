@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaptopIQ — Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070d;--bg2:#0d0d16;
+  --glass:rgba(255,255,255,0.03);--glass2:rgba(255,255,255,0.055);
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#eeeae0;--muted:rgba(238,234,224,.45);--dim:rgba(238,234,224,.18);
+  --lime:#c8f542;--cyan:#42d4f5;--amber:#f5a742;--pink:#f542a8;--violet:#9b7fff;
+  --r:14px;--sidebar:248px;--sidebar-collapsed:62px;--nav-h:62px;
+}
+html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:rgba(200,245,66,.18) transparent}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:rgba(200,245,66,.18);border-radius:99px}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:12.5px;line-height:1.65;
+  min-height:100vh;overflow-x:hidden;
+}
+/* NOISE */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+  background-size:180px;opacity:.55;
+}
+/* GRID */
+.grid-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(200,245,66,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(200,245,66,.022) 1px,transparent 1px);
+  background-size:52px 52px;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, black 40%,transparent 100%);
+}
+/* ORBS */
+.orb{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0;animation:drift 20s ease-in-out infinite alternate;}
+.orb1{width:650px;height:650px;background:rgba(200,245,66,.05);top:-280px;right:-180px;}
+.orb2{width:550px;height:550px;background:rgba(66,212,245,.038);bottom:-120px;left:-220px;animation-delay:-8s}
+.orb3{width:350px;height:350px;background:rgba(155,127,255,.038);top:45%;left:42%;animation-delay:-14s}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(50px,35px) scale(1.07)}}
+
+/* ══ TOP NAV ══ */
+.topnav{
+  position:fixed;top:0;left:0;right:0;z-index:200;height:var(--nav-h);
+  display:flex;align-items:center;justify-content:space-between;padding:0 28px;
+  background:rgba(7,7,13,.75);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.logo-icon{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,var(--lime),#7ef542);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#07070d;letter-spacing:-.5px;
+}
+.logo-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;letter-spacing:-.3px}
+.logo-name span{color:var(--lime)}
+.nav-links{display:flex;align-items:center;gap:2px}
+.nav-btn{
+  padding:6px 14px;border-radius:8px;font-size:10.5px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);cursor:pointer;
+  border:none;background:none;font-family:'DM Mono',monospace;transition:all .18s;
+}
+.nav-btn:hover{color:var(--text);background:var(--glass2)}
+.nav-btn.active{color:var(--lime);background:rgba(200,245,66,.07)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.pill-live{
+  padding:5px 13px;border-radius:100px;font-size:10px;letter-spacing:.05em;
+  border:1px solid rgba(200,245,66,.22);background:rgba(200,245,66,.07);color:var(--lime);
+}
+.blink{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--lime);margin-right:6px;animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ══ LAYOUT ══ */
+.layout{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh;padding-top:var(--nav-h);position:relative;z-index:1;transition:grid-template-columns .32s cubic-bezier(.4,0,.2,1)}
+.layout.collapsed{grid-template-columns:var(--sidebar-collapsed) 1fr}
+
+/* ══ SIDEBAR ══ */
+.sidebar{
+  position:fixed;top:var(--nav-h);left:0;bottom:0;width:var(--sidebar);
+  background:rgba(7,7,13,.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-right:1px solid var(--border);padding:28px 14px 24px;
+  overflow:hidden;z-index:100;display:flex;flex-direction:column;
+  transition:width .32s cubic-bezier(.4,0,.2,1);
+}
+.sidebar.collapsed{width:var(--sidebar-collapsed);padding:28px 8px 24px}
+
+/* Toggle button */
+.sb-toggle{
+  position:absolute;top:16px;right:-13px;z-index:101;
+  width:26px;height:26px;border-radius:50%;
+  background:var(--bg2);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;color:var(--muted);font-size:11px;
+}
+.sb-toggle:hover{background:rgba(200,245,66,.1);border-color:rgba(200,245,66,.3);color:var(--lime)}
+.sb-toggle svg{transition:transform .32s cubic-bezier(.4,0,.2,1)}
+.sidebar.collapsed .sb-toggle svg{transform:rotate(180deg)}
+
+/* Hide text labels when collapsed */
+.sb-text{transition:opacity .2s, width .32s;white-space:nowrap;overflow:hidden}
+.sidebar.collapsed .sb-text{opacity:0;width:0}
+.sidebar.collapsed .sb-count{opacity:0;width:0;padding:0;margin:0;overflow:hidden}
+.sidebar.collapsed .sb-head{opacity:0;height:0;margin:0;overflow:hidden}
+.sidebar.collapsed .sb-div{opacity:.4}
+.sidebar.collapsed .sb-brand{justify-content:center}
+.sidebar.collapsed .sb-b-num{display:none}
+.sidebar.collapsed .sb-foot .sb-stat{display:none}
+.sidebar.collapsed .sb-foot{padding-top:12px}
+
+/* Collapsed items — center icon only */
+.sidebar.collapsed .sb-item{justify-content:center;padding:9px 0}
+.sidebar.collapsed .sb-icon{margin:0}
+
+/* Tooltip on collapsed */
+.sb-item{position:relative}
+.sb-tooltip{
+  position:absolute;left:calc(var(--sidebar-collapsed) - 8px);top:50%;transform:translateY(-50%);
+  background:var(--bg2);border:1px solid var(--border2);color:var(--text);
+  padding:5px 11px;border-radius:8px;font-size:11px;white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .15s;z-index:300;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.sidebar.collapsed .sb-item:hover .sb-tooltip{opacity:1}
+
+.sb-head{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);padding:0 10px;margin-bottom:8px;transition:opacity .2s,height .32s;overflow:hidden}
+.sb-item{
+  display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;
+  color:var(--muted);font-size:11.5px;cursor:pointer;transition:all .18s;
+  border:1px solid transparent;background:none;width:100%;font-family:'DM Mono',monospace;text-align:left;
+}
+.sb-item:hover{color:var(--text);background:var(--glass2)}
+.sb-item.active{color:var(--lime);background:rgba(200,245,66,.07);border-color:rgba(200,245,66,.12)}
+.sb-icon{
+  width:26px;height:26px;border-radius:7px;background:var(--glass2);
+  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;
+}
+.sb-item.active .sb-icon{background:rgba(200,245,66,.14)}
+.sb-count{margin-left:auto;background:var(--glass2);padding:2px 7px;border-radius:100px;font-size:9.5px;color:var(--dim);transition:opacity .15s,width .32s,padding .32s,margin .32s;white-space:nowrap;overflow:hidden}
+.sb-div{height:1px;background:var(--border);margin:12px 0;transition:opacity .2s}
+.sb-brand{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;border-radius:8px;font-size:11px;transition:justify-content .32s;
+}
+.sb-b-num{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;transition:opacity .15s}
+.sb-foot{margin-top:auto;padding-top:20px;border-top:1px solid var(--border);transition:padding-top .32s}
+.sb-stat{padding:8px 10px;transition:opacity .2s}
+.sb-stat-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);margin-bottom:3px}
+.sb-stat-val{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;letter-spacing:-.5px}
+
+/* ══ MAIN ══ */
+.main{grid-column:2;padding:36px 36px 80px;min-width:0;transition:padding .32s}
+
+/* ══ HERO ══ */
+.hero{
+  margin-bottom:48px;padding:50px 52px 48px;border-radius:20px;
+  background:linear-gradient(140deg,rgba(200,245,66,.055) 0%,rgba(66,212,245,.035) 55%,rgba(155,127,255,.035) 100%);
+  border:1px solid var(--border2);position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1.5px;
+  background:linear-gradient(90deg,transparent 0%,var(--lime) 30%,var(--cyan) 70%,transparent 100%);
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;font-size:10px;color:var(--muted);
+  letter-spacing:.12em;text-transform:uppercase;margin-bottom:20px;
+  padding:5px 12px;background:var(--glass2);border:1px solid var(--border);border-radius:100px;
+}
+.hero-title{
+  font-family:'Syne',sans-serif;font-size:clamp(40px,5vw,76px);font-weight:800;
+  line-height:.92;letter-spacing:-2.5px;margin-bottom:20px;
+}
+.hero-title em{font-family:'Instrument Serif',serif;font-style:italic;color:var(--lime)}
+.hero-desc{font-size:13px;color:var(--muted);max-width:480px;line-height:1.9;margin-bottom:30px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:8px}
+.htag{
+  display:flex;align-items:center;gap:7px;padding:6px 13px;border-radius:9px;
+  border:1px solid var(--border);background:var(--glass);font-size:10.5px;color:var(--muted);
+}
+.htag-dot{width:7px;height:7px;border-radius:2px}
+
+/* ══ KPI STRIP ══ */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:40px}
+.kpi-card{
+  background:var(--glass);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px 20px;position:relative;overflow:hidden;transition:all .22s;cursor:default;
+}
+.kpi-card:hover{border-color:var(--border2);background:var(--glass2);transform:translateY(-1px)}
+.kpi-top-line{
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--kc,var(--lime));transform:scaleX(0);transform-origin:left;transition:transform .35s ease;
+}
+.kpi-card:hover .kpi-top-line{transform:scaleX(1)}
+.kpi-ico{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:14px}
+.kpi-lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.kpi-num{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;line-height:1;letter-spacing:-1.5px;margin-bottom:7px}
+.kpi-sub{font-size:10px;color:var(--dim)}
+
+/* ══ SECTION HEADER ══ */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.sec-lbl{display:flex;align-items:center;gap:9px;font-size:9.5px;text-transform:uppercase;letter-spacing:.16em;color:var(--dim)}
+.sec-lbl-sq{width:14px;height:14px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:7px}
+.sec-cnt{font-size:9.5px;color:var(--dim);padding:3px 10px;border:1px solid var(--border);border-radius:100px}
+
+/* ══ GRIDS ══ */
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.g75{display:grid;grid-template-columns:7fr 5fr;gap:14px}
+.g57{display:grid;grid-template-columns:5fr 7fr;gap:14px}
+.section{margin-bottom:36px}
+
+/* ══ CARD ══ */
+.card{
+  background:var(--glass);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px 20px 16px;transition:border-color .2s,box-shadow .2s;position:relative;overflow:hidden;
+}
+.card:hover{border-color:var(--border2);box-shadow:0 0 0 1px rgba(255,255,255,.025),0 24px 64px rgba(0,0,0,.45)}
+.card-line{position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,var(--ca,var(--lime)) 0%,transparent 70%)}
+.card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.card-title{font-family:'Syne',sans-serif;font-size:12.5px;font-weight:600;color:var(--text);letter-spacing:-.2px;margin-bottom:2px}
+.card-sub{font-size:10px;color:var(--muted)}
+.card-tag{padding:3px 8px;border-radius:100px;font-size:9px;border:1px solid var(--border);color:var(--muted);white-space:nowrap;flex-shrink:0;margin-top:2px}
+
+/* ══ BAR ROWS ══ */
+.bar-row{margin-bottom:11px}
+.bar-meta{display:flex;justify-content:space-between;margin-bottom:5px;font-size:10.5px}
+.bar-name{color:var(--muted)}.bar-val{color:var(--text);font-weight:500}
+.bar-track{height:5px;background:rgba(255,255,255,.05);border-radius:100px;overflow:hidden}
+.bar-fill{height:100%;border-radius:100px;animation:grow 1.3s cubic-bezier(.16,1,.3,1) both}
+@keyframes grow{from{width:0!important}}
+
+/* ══ DONUT ══ */
+.donut-wrap{position:relative}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.donut-big{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1;letter-spacing:-.5px}
+.donut-tiny{font-size:9px;color:var(--muted);margin-top:2px}
+
+/* ══ LEGEND ══ */
+.legend{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+.leg-sq{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+
+/* ══ STAT TABLE ══ */
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border:none}
+.stat-left{color:var(--muted);font-size:11px}
+.stat-right{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+.stat-tag{font-family:'DM Mono',monospace;font-weight:400;font-size:9.5px;color:var(--dim)}
+
+/* ══ SCROLL REVEAL ══ */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+.reveal.on{opacity:1;transform:none}
+.d1{transition-delay:.04s}.d2{transition-delay:.1s}.d3{transition-delay:.17s}.d4{transition-delay:.24s}
+
+/* ══ ANCHOR ══ */
+.anch{scroll-margin-top:calc(var(--nav-h) + 20px)}
+
+/* ══ FOOTER ══ */
+.footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:10px}
+.f-logo{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--muted)}
+.f-logo span{color:var(--lime)}
+
+canvas{display:block}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav class="topnav">
+  <div class="nav-logo">
+    <div class="logo-icon">LQ</div>
+    <span class="logo-name">Laptop<span>IQ</span></span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="goto('overview')">Overview</button>
+    <button class="nav-btn" onclick="goto('volume')">Volume</button>
+    <button class="nav-btn" onclick="goto('pricing')">Pricing</button>
+    <button class="nav-btn" onclick="goto('specs')">Specs</button>
+    <button class="nav-btn" onclick="goto('display')">Display</button>
+    <button class="nav-btn" onclick="goto('storage')">Storage</button>
+  </div>
+  <div class="nav-right">
+    <span class="pill-live"><span class="blink"></span>1,275 Models · Live</span>
+  </div>
+</nav>
+
+<div class="layout">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <!-- Toggle button -->
+  <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M7.5 2L3.5 6L7.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+
+  <div style="margin-bottom:20px;overflow:hidden">
+    <div class="sb-head"><span class="sb-text">Sections</span></div>
+    <button class="sb-item active" onclick="goto('overview')">
+      <span class="sb-icon">📊</span>
+      <span class="sb-text">Overview</span>
+      <span class="sb-tooltip">Overview</span>
+    </button>
+    <button class="sb-item" onclick="goto('volume')">
+      <span class="sb-icon">🏭</span>
+      <span class="sb-text">Market Volume</span>
+      <span class="sb-count">10</span>
+      <span class="sb-tooltip">Market Volume</span>
+    </button>
+    <button class="sb-item" onclick="goto('pricing')">
+      <span class="sb-icon">💶</span>
+      <span class="sb-text">Pricing</span>
+      <span class="sb-count">3</span>
+      <span class="sb-tooltip">Pricing</span>
+    </button>
+    <button class="sb-item" onclick="goto('specs')">
+      <span class="sb-icon">⚙️</span>
+      <span class="sb-text">Specifications</span>
+      <span class="sb-count">4</span>
+      <span class="sb-tooltip">Specifications</span>
+    </button>
+    <button class="sb-item" onclick="goto('display')">
+      <span class="sb-icon">🖥</span>
+      <span class="sb-text">Display & OS</span>
+      <span class="sb-count">3</span>
+      <span class="sb-tooltip">Display & OS</span>
+    </button>
+    <button class="sb-item" onclick="goto('storage')">
+      <span class="sb-icon">💾</span>
+      <span class="sb-text">Storage</span>
+      <span class="sb-count">2</span>
+      <span class="sb-tooltip">Storage</span>
+    </button>
+  </div>
+  <div class="sb-div"></div>
+  <div style="margin-bottom:16px;overflow:hidden">
+    <div class="sb-head"><span class="sb-text">Top Brands</span></div>
+    <div class="sb-brand">
+      <span class="sb-text" style="color:var(--muted);font-size:11px">Dell</span>
+      <span class="sb-b-num" style="color:var(--lime)">291</span>
+    </div>
+    <div class="sb-brand">
+      <span class="sb-text" style="color:var(--muted);font-size:11px">Lenovo</span>
+      <span class="sb-b-num" style="color:var(--cyan)">289</span>
+    </div>
+    <div class="sb-brand">
+      <span class="sb-text" style="color:var(--muted);font-size:11px">HP</span>
+      <span class="sb-b-num" style="color:var(--amber)">268</span>
+    </div>
+    <div class="sb-brand">
+      <span class="sb-text" style="color:var(--muted);font-size:11px">Asus</span>
+      <span class="sb-b-num" style="color:var(--pink)">152</span>
+    </div>
+    <div class="sb-brand">
+      <span class="sb-text" style="color:var(--muted);font-size:11px">Acer</span>
+      <span class="sb-b-num" style="color:var(--violet)">101</span>
+    </div>
+  </div>
+  <div class="sb-div"></div>
+  <div class="sb-foot">
+    <div class="sb-head"><span class="sb-text">Quick Stats</span></div>
+    <div class="sb-stat">
+      <div class="sb-stat-lbl">Price range</div>
+      <div class="sb-stat-val" style="color:var(--lime);font-size:13px">€174 – €6,099</div>
+    </div>
+    <div class="sb-stat">
+      <div class="sb-stat-lbl">Avg. price</div>
+      <div class="sb-stat-val" style="color:var(--cyan)">€1,135</div>
+    </div>
+    <div class="sb-stat">
+      <div class="sb-stat-lbl">Brands</div>
+      <div class="sb-stat-val" style="color:var(--amber)">19</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero reveal anch" id="overview">
+    <div class="hero-tag"><span style="color:var(--lime)">●</span> Global Laptop Market · 2024 Dataset</div>
+    <h1 class="hero-title">The <em>laptop</em><br>market decoded.</h1>
+    <p class="hero-desc">A deep-dive into 1,275 laptop models across 19 global brands — price intelligence, hardware specs, display tech, and OS distribution in one view.</p>
+    <div class="hero-tags">
+      <div class="htag"><div class="htag-dot" style="background:var(--lime)"></div>1,275 Models</div>
+      <div class="htag"><div class="htag-dot" style="background:var(--cyan)"></div>19 Brands</div>
+      <div class="htag"><div class="htag-dot" style="background:var(--amber)"></div>6 Categories</div>
+      <div class="htag"><div class="htag-dot" style="background:var(--pink)"></div>23 Attributes</div>
+      <div class="htag"><div class="htag-dot" style="background:var(--violet)"></div>€174 – €6,099</div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-strip reveal d1">
+    <div class="kpi-card" style="--kc:var(--lime)"><div class="kpi-top-line"></div>
+      <div class="kpi-ico">📦</div><div class="kpi-lbl">Total models</div>
+      <div class="kpi-num" style="color:var(--lime)" data-count="1275">0</div>
+      <div class="kpi-sub">across 19 brands</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--cyan)"><div class="kpi-top-line"></div>
+      <div class="kpi-ico">💶</div><div class="kpi-lbl">Avg. price</div>
+      <div class="kpi-num" style="color:var(--cyan)">€1,135</div>
+      <div class="kpi-sub">median €989</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--amber)"><div class="kpi-top-line"></div>
+      <div class="kpi-ico">💾</div><div class="kpi-lbl">SSD adoption</div>
+      <div class="kpi-num" style="color:var(--amber)">65.6%</div>
+      <div class="kpi-sub">vs 28.2% HDD</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--pink)"><div class="kpi-top-line"></div>
+      <div class="kpi-ico">🔵</div><div class="kpi-lbl">Intel CPU share</div>
+      <div class="kpi-num" style="color:var(--pink)">95.2%</div>
+      <div class="kpi-sub">vs 4.7% AMD</div>
+    </div>
+  </div>
+
+  <!-- VOLUME -->
+  <div class="section anch reveal d2" id="volume">
+    <div class="sec-hd">
+      <div class="sec-lbl"><div class="sec-lbl-sq" style="background:rgba(200,245,66,.14);color:var(--lime)">▪</div>Market Volume</div>
+      <span class="sec-cnt">Top 10 brands</span>
+    </div>
+    <div class="g75">
+      <div class="card" style="--ca:var(--lime)"><div class="card-line"></div>
+        <div class="card-hd">
+          <div><div class="card-title">Units by brand</div><div class="card-sub">Top 10 manufacturers by model count</div></div>
+          <span class="card-tag">19 brands total</span>
+        </div>
+        <div id="brand-vol"></div>
+      </div>
+      <div class="card" style="--ca:var(--cyan)"><div class="card-line"></div>
+        <div class="card-hd">
+          <div><div class="card-title">Avg. price by category</div><div class="card-sub">Mean selling price in euros</div></div>
+          <span class="card-tag">6 categories</span>
+        </div>
+        <div style="position:relative;height:258px"><canvas id="catPriceChart" role="img" aria-label="Average price by laptop category"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div class="section anch reveal d2" id="pricing">
+    <div class="sec-hd">
+      <div class="sec-lbl"><div class="sec-lbl-sq" style="background:rgba(66,212,245,.14);color:var(--cyan)">▪</div>Pricing Intelligence</div>
+      <span class="sec-cnt">€174 – €6,099</span>
+    </div>
+    <div class="g3">
+      <div class="card" style="--ca:var(--cyan);grid-column:span 2"><div class="card-line"></div>
+        <div class="card-hd">
+          <div><div class="card-title">Price distribution</div><div class="card-sub">Models per price band (€)</div></div>
+          <span class="card-tag">8 bands</span>
+        </div>
+        <div style="position:relative;height:188px"><canvas id="priceDistChart" role="img" aria-label="Price distribution histogram"></canvas></div>
+      </div>
+      <div class="card" style="--ca:var(--violet)"><div class="card-line"></div>
+        <div class="card-hd"><div><div class="card-title">RAM breakdown</div><div class="card-sub">Share by memory size</div></div></div>
+        <div class="donut-wrap" style="position:relative;height:148px">
+          <canvas id="ramDonut" role="img" aria-label="RAM distribution"></canvas>
+          <div class="donut-center"><div class="donut-big" style="color:var(--cyan)">8 GB</div><div class="donut-tiny">most common</div></div>
+        </div>
+        <div class="legend" id="ram-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Brand price full -->
+  <div class="section reveal">
+    <div class="card" style="--ca:var(--amber)"><div class="card-line"></div>
+      <div class="card-hd">
+        <div><div class="card-title">Avg. price by brand</div><div class="card-sub">14 brands ranked by mean price</div></div>
+        <span class="card-tag">All brands</span>
+      </div>
+      <div style="position:relative;height:255px"><canvas id="brandPriceChart" role="img" aria-label="Brand average price"></canvas></div>
+    </div>
+  </div>
+
+  <!-- SPECS -->
+  <div class="section anch reveal d2" id="specs">
+    <div class="sec-hd">
+      <div class="sec-lbl"><div class="sec-lbl-sq" style="background:rgba(245,167,66,.14);color:var(--amber)">▪</div>Hardware Specifications</div>
+      <span class="sec-cnt">GPU · Storage · Form Factor</span>
+    </div>
+    <div class="g3">
+      <div class="card" style="--ca:var(--cyan)"><div class="card-line"></div>
+        <div class="card-hd"><div><div class="card-title">GPU vendor</div><div class="card-sub">Discrete & integrated</div></div></div>
+        <div class="donut-wrap" style="position:relative;height:138px">
+          <canvas id="gpuDonut" role="img" aria-label="GPU vendor split"></canvas>
+          <div class="donut-center"><div class="donut-big" style="color:var(--lime)">55%</div><div class="donut-tiny">Intel</div></div>
+        </div>
+        <div class="legend" id="gpu-legend"></div>
+      </div>
+      <div class="card" style="--ca:var(--amber)"><div class="card-line"></div>
+        <div class="card-hd"><div><div class="card-title">Storage type</div><div class="card-sub">Primary storage across all models</div></div></div>
+        <div class="donut-wrap" style="position:relative;height:138px">
+          <canvas id="storDonut" role="img" aria-label="Storage type split"></canvas>
+          <div class="donut-center"><div class="donut-big" style="color:var(--amber)">66%</div><div class="donut-tiny">SSD</div></div>
+        </div>
+        <div class="legend" id="stor-legend"></div>
+      </div>
+      <div class="card" style="--ca:var(--pink)"><div class="card-line"></div>
+        <div class="card-hd"><div><div class="card-title">Laptop category</div><div class="card-sub">Form factor split</div></div></div>
+        <div class="donut-wrap" style="position:relative;height:138px">
+          <canvas id="typeDonut" role="img" aria-label="Laptop type split"></canvas>
+          <div class="donut-center"><div class="donut-big" style="color:var(--pink)">55%</div><div class="donut-tiny">Notebook</div></div>
+        </div>
+        <div class="legend" id="type-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISPLAY & OS -->
+  <div class="section anch reveal d2" id="display">
+    <div class="sec-hd">
+      <div class="sec-lbl"><div class="sec-lbl-sq" style="background:rgba(245,66,168,.14);color:var(--pink)">▪</div>Display & Operating System</div>
+    </div>
+    <div class="g2">
+      <div class="card" style="--ca:var(--lime)"><div class="card-line"></div>
+        <div class="card-hd"><div><div class="card-title">Screen resolution share</div><div class="card-sub">Models per resolution tier</div></div></div>
+        <div id="screen-vol"></div>
+      </div>
+      <div class="card" style="--ca:var(--violet)"><div class="card-line"></div>
+        <div class="card-hd"><div><div class="card-title">Feature availability</div><div class="card-sub">Touchscreen · IPS · Retina · Size</div></div></div>
+        <div>
+          <div class="stat-row"><span class="stat-left">Touchscreen — Yes</span><span class="stat-right" style="color:var(--lime)">188<span class="stat-tag">(14.7%)</span></span></div>
+          <div class="stat-row"><span class="stat-left">Touchscreen — No</span><span class="stat-right">1,087<span class="stat-tag">(85.3%)</span></span></div>
+          <div class="stat-row"><span class="stat-left">IPS Panel — Yes</span><span class="stat-right" style="color:var(--cyan)">522<span class="stat-tag">(40.9%)</span></span></div>
+          <div class="stat-row"><span class="stat-left">IPS Panel — No</span><span class="stat-right">753<span class="stat-tag">(59.1%)</span></span></div>
+          <div class="stat-row"><span class="stat-left">Retina Display</span><span class="stat-right" style="color:var(--amber)">21<span class="stat-tag">(1.6%)</span></span></div>
+          <div class="stat-row"><span class="stat-left">Most common size</span><span class="stat-right" style="color:var(--pink)">15.6<span class="stat-tag">″</span></span></div>
+          <div class="stat-row"><span class="stat-left">Most common res.</span><span class="stat-right">1920 × 1080</span></div>
+          <div class="stat-row"><span class="stat-left">Highest resolution</span><span class="stat-right" style="color:var(--lime)">3840 × 2160</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section reveal">
+    <div class="card" style="--ca:var(--cyan)"><div class="card-line"></div>
+      <div class="card-hd">
+        <div><div class="card-title">OS market share</div><div class="card-sub">Distribution across all 1,275 models</div></div>
+        <span class="card-tag">6 OS variants</span>
+      </div>
+      <div id="os-vol"></div>
+    </div>
+  </div>
+
+  <!-- STORAGE -->
+  <div class="section anch reveal d2" id="storage">
+    <div class="sec-hd">
+      <div class="sec-lbl"><div class="sec-lbl-sq" style="background:rgba(155,127,255,.14);color:var(--violet)">▪</div>Storage Deep Dive</div>
+    </div>
+    <div class="g2">
+      <div class="card" style="--ca:var(--lime)"><div class="card-line"></div>
+        <div class="card-hd"><div><div class="card-title">Storage capacity dist.</div><div class="card-sub">Model count by primary storage size</div></div></div>
+        <div style="position:relative;height:208px"><canvas id="storCapChart" role="img" aria-label="Storage capacity distribution"></canvas></div>
+      </div>
+      <div class="card" style="--ca:var(--violet)"><div class="card-line"></div>
+        <div class="card-hd"><div><div class="card-title">Price extremes by brand</div><div class="card-sub">Min price + range per brand</div></div></div>
+        <div style="position:relative;height:208px"><canvas id="priceRangeChart" role="img" aria-label="Price range by brand"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <div class="f-logo">Laptop<span>IQ</span> <span style="font-family:'DM Mono';font-size:9.5px;color:var(--dim);font-weight:400">— Market Intelligence</span></div>
+      <div style="margin-top:5px;color:var(--dim);font-size:9.5px">1,275 models · 19 brands · 23 attributes · Chart.js 4.4 · Google Fonts</div>
+    </div>
+    <div style="text-align:right;color:var(--dim);font-size:9.5px">
+      <div>Syne · DM Mono · Instrument Serif</div>
+      <div style="margin-top:4px">Data Science Dashboard</div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ── Sidebar toggle
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const layout=document.querySelector('.layout');
+  const collapsed=sb.classList.toggle('collapsed');
+  layout.classList.toggle('collapsed',collapsed);
+  localStorage.setItem('sb-collapsed', collapsed?'1':'0');
+}
+// Restore state
+(function(){
+  if(localStorage.getItem('sb-collapsed')==='1'){
+    document.getElementById('sidebar').classList.add('collapsed');
+    document.querySelector('.layout').classList.add('collapsed');
+  }
+})();
+
+// ── Scroll reveal
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('on');obs.unobserve(e.target)}}),{threshold:.06});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// ── Nav
+function goto(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth'});}
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',function(){document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');});
+});
+document.querySelectorAll('.sb-item').forEach(btn=>{
+  btn.addEventListener('click',function(){document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));this.classList.add('active');});
+});
+
+// ── Chart defaults
+const T='rgba(238,234,224,.5)',G='rgba(255,255,255,.05)';
+Chart.defaults.font.family="'DM Mono',monospace";
+Chart.defaults.font.size=11;Chart.defaults.color=T;
+const PAL=['#c8f542','#42d4f5','#f5a742','#f542a8','#a8f542','#4266f5','#f55742','#42f5c2','#f5d442','#9b7fff'];
+
+// ── Bar rows helper
+function bars(elId,data,maxV,total){
+  document.getElementById(elId).innerHTML=data.map(([n,c,col])=>`
+    <div class="bar-row">
+      <div class="bar-meta"><span class="bar-name">${n}</span><span class="bar-val">${c.toLocaleString()}${total?` <span style="color:var(--dim)">(${(c/total*100).toFixed(1)}%)</span>`:''}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c/maxV*100).toFixed(1)}%;background:${col};opacity:.9"></div></div>
+    </div>`).join('');
+}
+
+bars('brand-vol',[['Dell',291,'#c8f542'],['Lenovo',289,'#42d4f5'],['HP',268,'#f5a742'],['Asus',152,'#f542a8'],['Acer',101,'#a8f542'],['MSI',54,'#4266f5'],['Toshiba',48,'#f55742'],['Apple',21,'#42f5c2'],['Samsung',9,'#f5d442'],['Razer',7,'#9b7fff']],291,0);
+bars('os-vol',[['Windows 10',1048,'#42d4f5'],['No OS',66,'#555'],['Linux',58,'#c8f542'],['Windows 7',45,'#f5a742'],['Chrome OS',27,'#f542a8'],['macOS / Mac OS X',21,'#9b7fff']],1048,1275);
+bars('screen-vol',[['Full HD (1920×1080)',835,'#c8f542'],['Standard (<1080p)',369,'#42d4f5'],['4K Ultra HD',43,'#f5a742'],['Quad HD+',28,'#f542a8']],835,1275);
+
+// ── Charts
+new Chart(document.getElementById('catPriceChart'),{type:'bar',data:{labels:['Workstation','Gaming','Ultrabook','2-in-1','Notebook','Netbook'],datasets:[{data:[2280,1731,1557,1290,789,673],backgroundColor:['#c8f542','#42d4f5','#f5a742','#f542a8','#a8f542','#4266f5'].map(c=>c+'bb'),borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' €'+ctx.raw.toLocaleString()}}},scales:{x:{ticks:{color:T,callback:v=>'€'+v.toLocaleString()},grid:{color:G},border:{color:'transparent'}},y:{ticks:{color:T},grid:{display:false},border:{color:'transparent'}}}}});
+
+new Chart(document.getElementById('priceDistChart'),{type:'bar',data:{labels:['<€500','€500–750','€750–1k','€1k–1.5k','€1.5k–2k','€2k–3k','€3k–4k','>€4k'],datasets:[{data:[188,214,207,245,183,148,58,32],backgroundColor:ctx=>{const c=['#c8f542','#a8f542','#42f5c2','#42d4f5','#4266f5','#9b7fff','#f542a8','#f55742'];return c[ctx.dataIndex]+'bb';},borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:T,font:{size:10}},grid:{display:false},border:{color:'transparent'}},y:{ticks:{color:T},grid:{color:G},border:{color:'transparent'}}}}});
+
+function donut(id,labels,data,colors,legId){
+  new Chart(document.getElementById(id),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors.map(c=>c+'cc'),borderWidth:0,hoverOffset:7}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw.toLocaleString()} (${(ctx.raw/ctx.dataset.data.reduce((a,b)=>a+b)*100).toFixed(1)}%)`}}}}});
+  if(legId){const tot=data.reduce((a,b)=>a+b,0);document.getElementById(legId).innerHTML=labels.map((l,i)=>`<div class="leg-item"><div class="leg-sq" style="background:${colors[i]}"></div>${l}<span style="color:var(--dim);margin-left:3px">${(data[i]/tot*100).toFixed(0)}%</span></div>`).join('');}
+}
+donut('ramDonut',['4 GB','8 GB','16 GB','6 GB','2 GB','32+ GB'],[367,613,198,35,16,18],['#4266f5','#42d4f5','#c8f542','#42f5c2','#888','#9b7fff'],'ram-legend');
+donut('gpuDonut',['Intel','Nvidia','AMD'],[704,396,174],['#42d4f5','#c8f542','#f55742'],'gpu-legend');
+donut('storDonut',['SSD','HDD','Flash','Hybrid'],[837,359,71,8],['#c8f542','#f5a742','#42d4f5','#9b7fff'],'stor-legend');
+donut('typeDonut',['Notebook','Gaming','Ultrabook','2-in-1','Workstation','Netbook'],[707,205,194,117,29,23],['#f542a8','#f55742','#42d4f5','#c8f542','#f5a742','#9b7fff'],'type-legend');
+
+new Chart(document.getElementById('brandPriceChart'),{type:'bar',data:{labels:['Razer','LG','MSI','Google','Microsoft','Apple','Huawei','Samsung','Toshiba','Dell','Asus','Lenovo','HP','Acer'],datasets:[{data:[3346,2099,1729,1678,1612,1564,1424,1413,1268,1199,1124,1094,1080,633],backgroundColor:PAL.concat(PAL).map(c=>c+'bb'),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' €'+ctx.raw.toLocaleString()}}},scales:{x:{ticks:{color:T,font:{size:10},callback:v=>'€'+v.toLocaleString()},grid:{color:G},border:{color:'transparent'}},y:{ticks:{color:T,font:{size:10}},grid:{display:false},border:{color:'transparent'}}}}});
+
+new Chart(document.getElementById('storCapChart'),{type:'bar',data:{labels:['8 GB','16 GB','32 GB','64 GB','128 GB','256 GB','512 GB','1 TB','2 TB'],datasets:[{data:[4,5,10,28,175,495,351,186,21],backgroundColor:'#c8f542bb',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:T,font:{size:10},maxRotation:35},grid:{display:false},border:{color:'transparent'}},y:{ticks:{color:T},grid:{color:G},border:{color:'transparent'}}}}});
+
+new Chart(document.getElementById('priceRangeChart'),{type:'bar',data:{labels:['Acer','Apple','Asus','Dell','HP','Lenovo','MSI','Razer','Toshiba'],datasets:[{label:'Min price',data:[199,898,209,174,174,174,799,1599,209],backgroundColor:'#42d4f555',borderRadius:4,borderSkipped:false,stack:'a'},{label:'Range',data:[1100,1640,4090,4826,4325,4825,3500,4500,2390],backgroundColor:'#c8f54266',borderRadius:4,borderSkipped:false,stack:'a'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{color:T,font:{size:10},boxWidth:8,padding:10}}},scales:{x:{ticks:{color:T,font:{size:10}},grid:{display:false},stacked:true,border:{color:'transparent'}},y:{ticks:{color:T,callback:v=>'€'+v.toLocaleString()},grid:{color:G},stacked:true,border:{color:'transparent'}}}}});
+
+// ── Count up animation
+document.querySelectorAll('[data-count]').forEach(el=>{
+  const target=+el.dataset.count,dur=1400;let s=null;
+  const step=ts=>{if(!s)s=ts;const p=Math.min((ts-s)/dur,1),e=1-Math.pow(1-p,3);el.textContent=Math.round(e*target).toLocaleString();if(p<1)requestAnimationFrame(step);};
+  setTimeout(()=>requestAnimationFrame(step),400);
+});
+</script>
+</body>
+</html>
