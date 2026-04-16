@@ -119,32 +119,37 @@ plt.title("Simple Linear Regression with Prediction")
 plt.legend()
 
 plt.show()
+# =========================
+# OBJECTIVE 2: Pie chart
+# =========================
+import matplotlib.pyplot as plt
 
+# Data
+type_counts = df['TypeName'].value_counts()
+
+# Plot
+plt.figure(figsize=(10, 7))
+
+plt.pie(type_counts,labels=type_counts.index,autopct='%1.1f%%',startangle=140,colors=plt.cm.Pastel1.colors, 
+    explode=[0.03] * len(type_counts), 
+    shadow=True,
+    pctdistance=0.85 )
+plt.title("Distribution of Laptop Types", fontsize=15, pad=20)
+plt.tight_layout()
+plt.show()
 # =========================
 # OBJECTIVE 3: ram count
 # =========================
-
-# Plot
 df2 = df['Ram'].value_counts().head().reset_index()
 df2.columns = ['Ram', 'Count']
 plt.figure(figsize=(8,5))
 
-sns.barplot(
-    data=df2,
-    x='Count',
-    y='Ram',
-    palette='magma'
-    
-)
-
+sns.barplot(data=df2,x='Count',y='Ram',palette='magma')
 plt.xlabel("Number of Laptops")
 plt.ylabel("RAM (GB)")
 plt.title("Top RAM Configurations in Laptops")
-
-# Add value labels (VERY IMPRESSIVE)
 for i, v in enumerate(df2['Count']):
     plt.text(v + 2, i, str(v), va='center')
-
 plt.tight_layout()
 plt.show()
 # =========================
@@ -154,18 +159,12 @@ plt.show()
 company_counts = df['Company'].value_counts()
 plt.figure(figsize=(12,6))
 
-company_counts.plot(
-    kind='bar',
-    color=plt.cm.Set2.colors   # Different colors automatically
-)
-
+company_counts.plot(kind='bar',color=plt.cm.Set2.colors)
 plt.xlabel("Company")
 plt.ylabel("Count")
 plt.title("Number of Laptops by Company")
-
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
-
 plt.show()
 # =========================
 # OBJECTIVE 5: HYPOTHESIS TESTING (T-TEST)
