@@ -7,7 +7,6 @@ This project analyzes laptop prices based on hardware features like RAM, CPU, an
 - RAM vs Price Analysis
 - CPU vs Price Analysis
 - Storage vs Price Analysis
-- Visualization using Pairplot
 - Hypothesis Testing using T-test
 
 ## 🛠️ Tools & Technologies
