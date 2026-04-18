@@ -1,4 +1,4 @@
-# 💻 Laptop Price Analysis
+# 💻 Laptop Price Analysis 
 
 ## 📊 Project Overview
 This project analyzes laptop prices based on hardware specifications such as **RAM, CPU, storage, and company** using Data Science techniques. It combines **Exploratory Data Analysis (EDA), visualization, regression modeling, and hypothesis testing** to derive meaningful insights.
